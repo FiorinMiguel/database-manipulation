@@ -1,0 +1,138 @@
+---
+title: "Análise de comportamento de clientes em plataforma de música digital (SQLite)"
+author: "Miguel Fiorin"
+format: html
+editor: visual
+---
+
+## Perguntas de análise
+
+\- Quais países geram mais clientes?\
+- Existe concentração de clientes em poucos países?\
+- Quais mercados têm potencial de crescimento?\
+- O comportamento de compra varia por país?
+
+### Carregando pacotes necessários
+
+```{r loadpackages, message=FALSE, warning=FALSE}
+library(RSQLite)
+library(tidyverse)
+library(RSQLite)
+library(kableExtra)
+library(knitr)
+```
+
+### Conexão com o Banco
+
+```{r}
+fname = 'disco.db'
+conn = dbConnect(SQLite(), fname)
+```
+
+### Exploração inicial
+
+#### Tabelas existentes
+
+```{r}
+dbListTables(conn)
+```
+
+#### Inspecionando as colunas da tabela "customers"
+
+```{r}
+dbListFields(conn, "customers")
+```
+
+### Análise de Clientes
+
+#### Total de clientes
+
+```{r}
+buscar_clientes_cadastrados = paste(
+  "SELECT COUNT(CustomerId) as ClientesCadastrados",
+  "FROM customers"
+)
+dbGetQuery(conn, buscar_clientes_cadastrados)
+```
+
+O banco possui 59 clientes cadastrados, indicando uma base relativamente pequena. \
+Isso sugere que análises podem ser sensíveis a outliers e que estratégias de crescimento \
+de base podem ser relevantes.
+
+#### Países distintos
+
+```{r}
+buscar_numero_paises = paste(
+  "SELECT COUNT(DISTINCT Country) AS NumPaíses",
+  "FROM customers"
+)
+dbGetQuery(conn, buscar_numero_paises)
+```
+
+O banco de dados apresenta clientes distribuídos em 24 países diferentes, indicando que a base possui alcance internacional.
+
+Apesar disso, o número total de clientes (59) é relativamente baixo em comparação com a quantidade de países, o que sugere uma alta dispersão geográfica com poucos clientes por país.
+
+#### Clientes por país
+
+```{r}
+busca_cliente_por_pais = paste(
+  "SELECT Country, COUNT(customerId) AS 'NumClientes'",
+  "FROM customers",
+  "GROUP BY Country",
+  "ORDER BY COUNT(customerId) DESC"
+)
+
+dbGetQuery(conn, busca_cliente_por_pais)
+```
+
+Observa-se uma forte concentração de clientes nos Estados Unidos (13 clientes), seguido por Canadá (8). Juntos, esses dois países representam uma parcela significativa da base total.
+
+Por outro lado, a maioria dos países possui poucos clientes (1 a 5), indicando uma distribuição bastante desigual entre os mercados.
+
+#### Top 5 países
+
+```{r}
+busca_5_paises= paste(
+  "SELECT Country, COUNT(customerId) AS 'NumClientes'",
+  "FROM customers",
+  "GROUP BY Country",
+  "ORDER BY COUNT(customerId) DESC",
+  "LIMIT 5"
+)
+
+dbGetQuery(conn, busca_5_paises)
+```
+
+Os 5 principais países concentram a maior parte dos clientes, com destaque para os Estados Unidos (13) e Canadá (8), seguidos por França e Brasil (5 cada) e Alemanha (4).
+
+Isso indica que a base de clientes está relativamente concentrada em poucos mercados, apesar da presença global observada anteriormente.
+
+### Quais foram as músicas compradas por clientes brasileiros?
+
+```{r}
+buscar_musicas_compradas_por_brasileiros = paste(
+"SELECT DISTINCT t.Name
+FROM customers c
+JOIN invoices i ON c.CustomerId = i.CustomerId
+JOIN invoice_items ii ON i.InvoiceId = ii.InvoiceId
+JOIN tracks t ON ii.TrackId = t.TrackId
+WHERE c.Country = 'Brazil'
+LIMIT 10
+"
+)
+#dbListFields(conn, 'invoices')
+#dbGetQuery(conn, "SELECT * FROM invoices LIMIT 10")
+
+dbGetQuery(conn, buscar_musicas_compradas_por_brasileiros)
+```
+
+A análise das músicas compradas por clientes brasileiros mostra uma diversidade de faixas adquiridas.
+
+Isso indica que o consumo de música por esses clientes é relativamente variado, abrangendo diferentes artistas e estilos.
+
+### Desconecte do Banco de Dados
+
+```{r}
+dbDisconnect(conn)
+```
