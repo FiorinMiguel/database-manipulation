@@ -1,0 +1,91 @@
+---
+title: "Criação do Banco de Dados SQLite"
+author: "Miguel Fiorin"
+format: html
+editor: visual
+---
+
+## Carregando pacotes necessários
+
+```{r loadpackages}
+library(DBI)
+library(RSQLite)
+library(readr)
+library(glue)
+library(knitr)
+library(kableExtra)
+library(tibble)
+```
+
+## Configurações Iniciais e Função de Importação de Arquivos TSV
+
+Neste chunk, é criado um arquivo SQLite no diretório, sendo necessário que não exista previamente um arquivo com o nome "IMDB.db". Em seguida, estabelecemos o tamanho do chunk, isto é, a quantidade de linhas adicionadas ao banco de dados por iteração.
+
+Por fim, definimos uma função para ler o arquivo .tsv de forma incremental, adicionando 200.000 linhas por iteração à tabela especificada no banco de dados.
+
+Esse método é importante para evitar sobrecarga de memória. Além disso, permite substituir os valores "\N" por NA.
+
+```{r}
+conn <- dbConnect(SQLite(), "IMDB.db")
+chunk_sz = 200000
+
+import_tsv <- function(tsv, name_table){
+  dbExecute(conn, glue("DROP TABLE IF EXISTS {name_table}"))
+  
+  read_tsv_chunked(
+    tsv,
+    callback = DataFrameCallback$new(function(x, pos) {
+      dbWriteTable(conn, name_table, x, append = TRUE)
+    }),
+    chunk_size = chunk_sz,
+    na = "\\N"
+  )
+}
+```
+
+## Importação dos Arquivos TSV para o Banco de Dados SQLite
+
+```{r, eval=FALSE }
+import_tsv("title.ratings.tsv", "ratings")
+import_tsv("title.basics0.tsv" , "basics")
+import_tsv("title.principals0.tsv" , "principals")
+```
+
+## Verificando se as tabelas foram importadas corretamente
+
+Ao utilizar o PowerShell para verificar o número de linhas de cada arquivo TSV, por meio do comando `Get-Content arquivo.tsv | Measure-Object -Line`, obtivemos os valores apresentados na tabela a seguir.
+
+```{r}
+contagem_df <- tibble(
+  Tabela = c("ratings", "basics", "principals"),
+  Linhas = c(1484616, 11144943, 88359623)
+)
+
+contagem_df %>%
+  kable(
+    col.names = c("Tabela", "Número de Linhas"),
+    align = "c",
+  ) %>%
+  kable_styling(full_width = FALSE, position = "center")
+```
+
+É importante destacar que, na contagem via terminal, a primeira linha (cabeçalho) é incluída, enquanto no SQLite essa linha não é considerada nos registros da tabela.
+
+```{r}
+dbGetQuery(conn , "SELECT COUNT(*) FROM ratings;")
+
+```
+
+```{r}
+dbGetQuery(conn, "SELECT COUNT(*) FROM basics")
+```
+
+```{r}
+dbGetQuery(conn, "SELECT COUNT(*) FROM principals")
+```
+
+Portanto, assumimos que os arquivos foram bem importados para a base de dados .db
+
+```{r}
+dbDisconnect(conn)
+```
