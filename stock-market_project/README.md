@@ -27,5 +27,3 @@ Pipeline próprio de ETL que ingere dados históricos de ações da AMEX, NASDAQ
 | ETL & Estatística | Pandas, NumPy |
 | Banco de dados | DuckDB |
 | Dashboard | Streamlit, Plotly |
-
-## Arquitetura
