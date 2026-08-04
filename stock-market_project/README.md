@@ -3,7 +3,7 @@
 Pipeline de dados e dashboard analítico para o mercado acionário norte-americano (AMEX, NASDAQ e NYSE), transformando cotações brutas em métricas quantitativas com uma interface interativa no estilo terminal financeiro.
 
 
-![Preview do dashboard]()
+![Preview do dashboard](dash.png)
 
 ---
 
