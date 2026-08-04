@@ -4,8 +4,6 @@ Pipeline de dados e dashboard analítico para o mercado acionário norte-america
 
 ---
 
-## ⚡ O que o projeto faz
-
 * **ETL Automatizado:** Trata dados brutos de cotações, gera retornos logarítmicos e mapeia assets por exchange.
 * **Data Warehouse OLAP:** Salva e consulta dados diretamente em alta performance usando **DuckDB**.
 * **Estatística Quantitativa:** Calcula retorno médio, desvio padrão, assimetria e curtose dos ativos.
@@ -13,7 +11,7 @@ Pipeline de dados e dashboard analítico para o mercado acionário norte-america
 
 ---
 
-## 🛠️ Stack
+## Stack
 
 * **Linguagem:** Python
 * **ETL & Estatística:** Pandas, NumPy
